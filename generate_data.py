@@ -8,6 +8,7 @@ from typing import List, Dict, Optional, Tuple
 import requests
 import feedparser
 from bs4 import BeautifulSoup
+from PIL import Image
 import yaml
 
 # Configuration
@@ -200,6 +201,62 @@ def _file_hash(path: str) -> str:
             hasher.update(chunk)
     return hasher.hexdigest()
 
+# Perceptual hash size (dHash): an (N+1)xN grid of gradient comparisons,
+# giving an N*N-bit fingerprint of the image's visual content.
+PHASH_SIZE = 8
+# Hamming-distance (out of PHASH_SIZE*PHASH_SIZE bits) below which two
+# images are considered visually the same front page, allowing for
+# incidental re-encoding/re-compression/resizing noise from the source
+# CDN rather than a genuine change to the printed page.
+PHASH_MATCH_THRESHOLD = 6
+
+def _perceptual_hash(path: str) -> Optional[int]:
+    """
+    Computes a difference hash (dHash) of the image, which is robust to
+    re-compression, minor resizing, and other encoding differences that
+    don't change what the image actually shows. Returns None if the file
+    can't be decoded as an image.
+    """
+    try:
+        with Image.open(path) as img:
+            gray = img.convert("L").resize(
+                (PHASH_SIZE + 1, PHASH_SIZE), Image.LANCZOS
+            )
+            pixels = list(gray.getdata())
+    except Exception as e:
+        print(f"    [-] Could not decode image for perceptual hash: {e}", file=sys.stderr)
+        return None
+
+    bits = 0
+    for row in range(PHASH_SIZE):
+        offset = row * (PHASH_SIZE + 1)
+        for col in range(PHASH_SIZE):
+            bits <<= 1
+            if pixels[offset + col] > pixels[offset + col + 1]:
+                bits |= 1
+    return bits
+
+def _hamming_distance(a: int, b: int) -> int:
+    return bin(a ^ b).count("1")
+
+def _images_visually_match(path_a: str, path_b: str) -> bool:
+    """
+    Returns True if two image files should be treated as the same front
+    page: either byte-identical, or perceptually indistinguishable within
+    PHASH_MATCH_THRESHOLD. If either image can't be decoded for perceptual
+    hashing, only the (already-failed) byte comparison applies, so they're
+    treated as different.
+    """
+    if _file_hash(path_a) == _file_hash(path_b):
+        return True
+
+    hash_a = _perceptual_hash(path_a)
+    hash_b = _perceptual_hash(path_b)
+    if hash_a is None or hash_b is None:
+        return False
+
+    return _hamming_distance(hash_a, hash_b) <= PHASH_MATCH_THRESHOLD
+
 def _next_version_path(output_path: str) -> str:
     """
     Finds the next free "_vN" archive path for a given canonical output path,
@@ -234,7 +291,7 @@ def download_image(url: str, output_path: str) -> bool:
             return False
 
         if os.path.exists(output_path):
-            if _file_hash(output_path) == _file_hash(tmp_path):
+            if _images_visually_match(output_path, tmp_path):
                 return False
 
             # The front page has changed since we last checked: archive the
