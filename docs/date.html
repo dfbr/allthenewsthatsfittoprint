@@ -1,0 +1,53 @@
+---
+layout: default
+title: Archive Day
+---
+
+<div class="container my-4">
+  <div class="mb-4">
+    <a href="/history.html" class="btn btn-sm btn-outline-secondary">&larr; Back to Archive History</a>
+  </div>
+
+  <div class="text-center mb-5">
+    <h1 class="display-5 fw-bold" id="date-heading">Loading Front Pages...</h1>
+    <p class="lead text-muted">Complete collection of UK national covers for this date.</p>
+  </div>
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4" id="papers-grid">
+    <!-- Populated via JavaScript -->
+  </div>
+</div>
+
+<script>
+  const papersData = {{ site.data.papers | jsonify }};
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedDate = urlParams.get('date');
+
+  const heading = document.getElementById('date-heading');
+  const grid = document.getElementById('papers-grid');
+
+  if (selectedDate) {
+    heading.textContent = `Front Pages for ${selectedDate}`;
+    const filteredPapers = papersData.filter(item => item.date === selectedDate);
+
+    if (filteredPapers.length === 0) {
+      grid.innerHTML = `<div class="col-12 text-center text-muted"><p>No paper covers found for this date.</p></div>`;
+    } else {
+      grid.innerHTML = filteredPapers.map(paper => `
+        <div class="col">
+          <div class="card h-100 shadow-sm border-0">
+            <a href="${paper.img_url}" target="_blank" rel="noopener">
+              <img src="${paper.img_url}" class="card-img-top" alt="${paper.paper_display} cover">
+            </a>
+            <div class="card-body text-center p-3">
+              <h5 class="card-title h6 mb-0">${paper.paper_display}</h5>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } else {
+    heading.textContent = "No Date Selected";
+    grid.innerHTML = `<div class="col-12 text-center"><a href="/history.html" class="btn btn-primary">Return to History</a></div>`;
+  }
+</script>

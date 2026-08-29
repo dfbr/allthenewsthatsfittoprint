@@ -1,18 +1,31 @@
 ---
 layout: default
-title: "UK Newspaper Archive"
+title: Latest Front Pages
 ---
 
-<div class="grid">
-  {% for item in site.data.papers %}
-  <div class="card">
-    <a href="{{ item.img_url | relative_url }}" target="_blank">
-      <img src="{{ item.img_url | relative_url }}" alt="{{ item.paper_display }} cover" loading="lazy">
-    </a>
-    <div class="card-body">
-      <h3>{{ item.paper_display }}</h3>
-      <p>{{ item.date }}</p>
-    </div>
+<div class="container my-4">
+  {% assign latest_date = site.data.papers | map: "date" | first %}
+  {% assign latest_papers = site.data.papers | where: "date", latest_date %}
+
+  <div class="text-center mb-5">
+    <span class="badge bg-danger text-uppercase px-3 py-2 fs-6 mb-2">Today's Edition</span>
+    <h1 class="display-4 fw-bold">Front Pages for {{ latest_date }}</h1>
+    <p class="lead text-muted">Showing all UK national newspaper front covers collected today.</p>
+    <a href="/history.html" class="btn btn-outline-primary btn-sm mt-2">Explore Historical Archive &rarr;</a>
   </div>
-  {% endfor %}
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for paper in latest_papers %}
+    <div class="col">
+      <div class="card h-100 shadow-sm border-0">
+        <a href="{{ paper.img_url }}" target="_blank" rel="noopener">
+          <img src="{{ paper.img_url }}" class="card-img-top loading-lazy" alt="{{ paper.paper_display }} front page for {{ paper.date }}">
+        </a>
+        <div class="card-body text-center p-3">
+          <h5 class="card-title h6 mb-0">{{ paper.paper_display }}</h5>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>

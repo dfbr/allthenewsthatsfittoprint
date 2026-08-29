@@ -1,0 +1,37 @@
+---
+layout: default
+title: Historical Archive
+---
+
+<div class="container my-4">
+  <div class="text-center mb-5">
+    <h1 class="display-5 fw-bold">Historical Archive</h1>
+    <p class="lead text-muted">Select any past date to view all national newspaper covers published on that day.</p>
+  </div>
+
+  {% assign dates = site.data.papers | map: "date" | uniq %}
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for day in dates %}
+      {% assign day_papers = site.data.papers | where: "date", day %}
+      {% assign sample_paper = day_papers | first %}
+
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+          <a href="/date.html?date={{ day }}" class="text-decoration-none text-dark">
+            <div class="position-relative">
+              <img src="{{ sample_paper.img_url }}" class="card-img-top" alt="Front page sample for {{ day }}" style="height: 280px; object-fit: cover; object-position: top;">
+              <span class="position-absolute top-0 end-0 bg-dark text-white px-2 py-1 m-2 rounded small opacity-75">
+                {{ day_papers.size }} papers
+              </span>
+            </div>
+            <div class="card-body text-center p-3">
+              <h5 class="card-title h6 mb-1">{{ day }}</h5>
+              <span class="btn btn-sm btn-primary w-100 mt-2">View Day's Papers &rarr;</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
