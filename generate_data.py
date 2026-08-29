@@ -1,3 +1,4 @@
+import hashlib
 import os
 import re
 import sys
@@ -188,25 +189,61 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
 
     return images_data
 
-def download_image(url: str, output_path: str) -> bool:
-    if os.path.exists(output_path):
-        return False
+# Matches archived version filenames, e.g. "2024-01-01_v2.jpg"
+VERSION_SUFFIX_RE = re.compile(r'^(?P<base>.+)_v(?P<version>\d+)(?P<ext>\.[^.]+)$')
 
+def _file_hash(path: str) -> str:
+    hasher = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+def _next_version_path(output_path: str) -> str:
+    """
+    Finds the next free "_vN" archive path for a given canonical output path,
+    e.g. "2024-01-01.jpg" -> "2024-01-01_v1.jpg" (or the next free N).
+    """
+    base, ext = os.path.splitext(output_path)
+    directory = os.path.dirname(output_path)
+    highest = 0
+    if os.path.isdir(directory):
+        for existing in os.listdir(directory):
+            match = VERSION_SUFFIX_RE.match(existing)
+            if match and os.path.join(directory, match.group("base") + match.group("ext")) == base + ext:
+                highest = max(highest, int(match.group("version")))
+    return f"{base}_v{highest + 1}{ext}"
+
+def download_image(url: str, output_path: str) -> bool:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
-    
+
     try:
-        with session.get(url, stream=True, timeout=15) as r:
+        with session.get(url, timeout=15) as r:
             r.raise_for_status()
-            with open(output_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-        print(f"    [+] Saved new cover: {output_path}")
-        return True
+            content = r.content
     except Exception as e:
         print(f"    [-] Failed to download image {url}: {e}", file=sys.stderr)
         return False
+
+    if os.path.exists(output_path):
+        existing_hash = _file_hash(output_path)
+        new_hash = hashlib.sha256(content).hexdigest()
+        if existing_hash == new_hash:
+            return False
+
+        # The front page has changed since we last checked: archive the
+        # previous version before writing the new one to the canonical path,
+        # so the day's page can show every version published so far.
+        archive_path = _next_version_path(output_path)
+        os.rename(output_path, archive_path)
+        print(f"    [~] Front page changed, archived previous version: {archive_path}")
+
+    with open(output_path, 'wb') as f:
+        f.write(content)
+    print(f"    [+] Saved new cover: {output_path}")
+    return True
 
 def build_jekyll_yaml():
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -215,16 +252,50 @@ def build_jekyll_yaml():
     if os.path.exists(COVERS_DIR):
         for paper_folder in os.listdir(COVERS_DIR):
             folder_path = os.path.join(COVERS_DIR, paper_folder)
-            if os.path.isdir(folder_path):
-                for file in os.listdir(folder_path):
-                    if file.endswith(".jpg"):
-                        date_str = file.replace(".jpg", "")
-                        all_covers.append({
-                            "paper": paper_folder,
-                            "paper_display": paper_folder.replace("_", " "),
-                            "date": date_str,
-                            "img_url": f"/covers/{paper_folder}/{file}"
-                        })
+            if not os.path.isdir(folder_path):
+                continue
+
+            # Group every file for this paper by the date it was published,
+            # separating out any archived earlier versions ("_vN" suffix)
+            # from the canonical (most recent) image for that date.
+            by_date: Dict[str, Dict[str, object]] = {}
+            for file in os.listdir(folder_path):
+                if not file.endswith(".jpg"):
+                    continue
+
+                version_match = VERSION_SUFFIX_RE.match(file)
+                if version_match:
+                    date_str = version_match.group("base")
+                    version_num = int(version_match.group("version"))
+                else:
+                    date_str = file[:-len(".jpg")]
+                    version_num = None
+
+                entry = by_date.setdefault(date_str, {"canonical": None, "archived": []})
+                if version_num is None:
+                    entry["canonical"] = file
+                else:
+                    entry["archived"].append((version_num, file))
+
+            for date_str, entry in by_date.items():
+                if not entry["canonical"]:
+                    # Only archived versions exist with no current canonical
+                    # image (shouldn't normally happen); skip incomplete data.
+                    continue
+
+                archived_urls = [
+                    f"/covers/{paper_folder}/{file}"
+                    for _, file in sorted(entry["archived"], key=lambda pair: pair[0])
+                ]
+                canonical_url = f"/covers/{paper_folder}/{entry['canonical']}"
+
+                all_covers.append({
+                    "paper": paper_folder,
+                    "paper_display": paper_folder.replace("_", " "),
+                    "date": date_str,
+                    "img_url": canonical_url,
+                    "versions": archived_urls + [canonical_url]
+                })
 
     all_covers.sort(key=lambda x: (x["date"], x["paper_display"]), reverse=True)
 
