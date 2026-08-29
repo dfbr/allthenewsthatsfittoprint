@@ -13,7 +13,12 @@ DOCS_DIR = "./docs"
 COVERS_DIR = os.path.join(DOCS_DIR, "covers")
 DATA_DIR = os.path.join(DOCS_DIR, "_data")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-BBC_RSS_URL = "http://feeds.bbci.co.uk/news/uk/rss.xml"
+
+# Primary and topic-specific RSS feeds from BBC
+BBC_RSS_URLS = [
+    "http://feeds.bbci.co.uk/news/uk/rss.xml",
+    "http://feeds.bbci.co.uk/news/rss.xml"
+]
 
 KNOWN_PAPERS = [
     "Daily Mail", "The Daily Telegraph", "Telegraph", "The Times", "The Guardian",
@@ -41,38 +46,45 @@ def upgrade_bbc_image_url(url: str, target_width: int = 1024) -> str:
 
 def get_paper_roundup_articles() -> List[Tuple[str, str]]:
     """
-    Searches current RSS feed for paper roundup entries.
+    Searches multiple RSS feeds for paper roundup entries.
     Returns a list of tuples: [(article_url, date_str), ...]
     """
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     
-    try:
-        response = session.get(BBC_RSS_URL, timeout=15)
-        feed = feedparser.parse(response.content)
-    except Exception as e:
-        print(f"[-] RSS Fetch Error: {e}", file=sys.stderr)
-        return []
-
     found_articles = []
-    print(f"[*] Fetched RSS feed containing {len(feed.entries)} entries.")
+    seen_links = set()
 
-    for entry in feed.entries:
-        title = entry.get("title", "")
-        # Match standard BBC roundup titles
-        if re.search(r"What the papers say|Newspaper headlines|national papers|paper review", title, re.IGNORECASE):
+    for rss_url in BBC_RSS_URLS:
+        try:
+            response = session.get(rss_url, timeout=15)
+            feed = feedparser.parse(response.content)
+            print(f"[*] Fetched RSS feed ({rss_url}) containing {len(feed.entries)} entries.")
+        except Exception as e:
+            print(f"[-] RSS Fetch Error ({rss_url}): {e}", file=sys.stderr)
+            continue
+
+        for entry in feed.entries:
+            title = entry.get("title", "")
             link = entry.get("link", "")
-            published_parsed = entry.get("published_parsed")
-            if published_parsed:
-                date_str = datetime.date(*published_parsed[:3]).isoformat()
-            else:
-                date_str = datetime.date.today().isoformat()
-                
-            print(f"[+] Found Article Candidate: '{title}' ({date_str}) -> {link}")
-            found_articles.append((link, date_str))
+            
+            if link in seen_links:
+                continue
+
+            # Broadened regex matching for BBC paper roundup headlines
+            if re.search(r"What the papers say|Newspaper headlines|national papers|paper review|front pages|headlines:", title, re.IGNORECASE):
+                published_parsed = entry.get("published_parsed")
+                if published_parsed:
+                    date_str = datetime.date(*published_parsed[:3]).isoformat()
+                else:
+                    date_str = datetime.date.today().isoformat()
+                    
+                print(f"[+] Found Article Candidate: '{title}' ({date_str}) -> {link}")
+                found_articles.append((link, date_str))
+                seen_links.add(link)
 
     if not found_articles:
-        print("[-] No matching 'What the papers say' articles in the current RSS feed.")
+        print("[-] No matching paper articles found in checked RSS feeds.")
 
     return found_articles
 
@@ -93,7 +105,7 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
 
     article = soup.find("article") or soup
     
-    # 1. Search <figure> elements
+    # Parse <figure> elements
     figures = article.find_all("figure")
     for fig in figures:
         img = fig.find("img")
@@ -117,7 +129,7 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
             high_res_url = upgrade_bbc_image_url(src, target_width=1024)
             images_data.append({"paper": paper_name, "url": high_res_url, "alt": alt_text})
 
-    # 2. Fallback: Search loose <img> tags if no <figure> tags were parsed
+    # Fallback to general <img> tags
     if not images_data:
         for img in article.find_all("img"):
             src = img.get("src") or img.get("data-src")
@@ -135,7 +147,7 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
 def download_image(url: str, output_path: str) -> bool:
     """Downloads an image file. Returns True if a new file was saved."""
     if os.path.exists(output_path):
-        return False  # Already exists, skipped
+        return False
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     session = requests.Session()
@@ -172,7 +184,6 @@ def build_jekyll_yaml():
                             "img_url": f"/covers/{paper_folder}/{file}"
                         })
 
-    # Sort descending by date, then paper name
     all_covers.sort(key=lambda x: (x["date"], x["paper_display"]), reverse=True)
 
     yaml_file = os.path.join(DATA_DIR, "papers.yml")
@@ -196,16 +207,16 @@ def main():
             if download_image(img["url"], output_file):
                 new_images_downloaded += 1
 
-    # Update YAML data index
     build_jekyll_yaml()
 
     print(f"\n[+] Execution complete. New downloads added: {new_images_downloaded}")
     
-    # Output flag for GitHub Actions to determine if a git commit is required
-    if new_images_downloaded > 0:
-        print("::set-output name=has_new_data::true")
-    else:
-        print("::set-output name=has_new_data::false")
+    # Modern GitHub Actions output mechanism using GITHUB_OUTPUT environment file
+    github_output = os.getenv("GITHUB_OUTPUT")
+    has_new = "true" if new_images_downloaded > 0 else "false"
+    if github_output:
+        with open(github_output, "a") as f:
+            f.write(f"has_new_data={has_new}\n")
 
 if __name__ == "__main__":
     main()
