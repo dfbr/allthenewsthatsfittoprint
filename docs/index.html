@@ -19,11 +19,9 @@ title: Latest Front Pages
   {% else %}
     {% assign day_suffix = "th" %}
   {% endif %}
-
   <div class="text-center mb-5">
     <h1 class="display-4 fw-bold">Front Pages for {{ day }}<sup>{{ day_suffix }}</sup> {{ latest_date | date: "%B %Y" }}</h1>
   </div>
-
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
     {% for paper in latest_papers %}
     <div class="col">
