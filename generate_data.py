@@ -47,7 +47,7 @@ def upgrade_bbc_image_url(url: str, target_width: int = 1024) -> str:
 def get_paper_roundup_articles() -> List[Tuple[str, str]]:
     """
     Searches multiple RSS feeds for paper roundup entries.
-    Returns a list of tuples: [(article_url, date_str), ...]
+    Matches titles or descriptions containing paper/headline keywords.
     """
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
@@ -66,13 +66,19 @@ def get_paper_roundup_articles() -> List[Tuple[str, str]]:
 
         for entry in feed.entries:
             title = entry.get("title", "")
+            description = entry.get("summary", "") or entry.get("description", "")
             link = entry.get("link", "")
             
             if link in seen_links:
                 continue
 
-            # Broadened regex matching for BBC paper roundup headlines
-            if re.search(r"What the papers say|Newspaper headlines|national papers|paper review|front pages|headlines:", title, re.IGNORECASE):
+            # Combined regex matching across both TITLE and DESCRIPTION
+            combined_text = f"{title} {description}"
+            
+            # Pattern matches classic titles OR description references like "Several papers focus..."
+            pattern = r"What the papers say|Newspaper headlines|national papers|paper review|front pages|headline|papers focus|papers report"
+            
+            if re.search(pattern, combined_text, re.IGNORECASE):
                 published_parsed = entry.get("published_parsed")
                 if published_parsed:
                     date_str = datetime.date(*published_parsed[:3]).isoformat()
@@ -88,8 +94,9 @@ def get_paper_roundup_articles() -> List[Tuple[str, str]]:
 
     return found_articles
 
+
 def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
-    """Extracts front page images from BBC article DOM."""
+    """Extracts front page images from modern BBC article DOM structures."""
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     
@@ -105,8 +112,8 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
 
     article = soup.find("article") or soup
     
-    # Parse <figure> elements
-    figures = article.find_all("figure")
+    # 1. Look for figures and picture elements
+    figures = article.find_all(["figure", "picture"])
     for fig in figures:
         img = fig.find("img")
         if not img:
@@ -121,20 +128,23 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
         if not src or "ichef.bbci.co.uk" not in src:
             continue
 
-        figcaption = fig.find("figcaption")
+        figcaption = fig.find(["figcaption", "caption"])
         alt_text = figcaption.get_text(strip=True) if figcaption else img.get("alt", "")
         
-        if re.search(r"front|page|paper|cover|headline|mail|times|guardian|telegraph|express|sun|mirror|ft", alt_text, re.IGNORECASE):
-            paper_name = extract_paper_name(alt_text)
-            high_res_url = upgrade_bbc_image_url(src, target_width=1024)
-            images_data.append({"paper": paper_name, "url": high_res_url, "alt": alt_text})
+        # Pull text surrounding parent blocks if alt/caption is empty
+        if not alt_text and fig.parent:
+            alt_text = fig.parent.get_text(strip=True)
 
-    # Fallback to general <img> tags
+        paper_name = extract_paper_name(alt_text)
+        high_res_url = upgrade_bbc_image_url(src, target_width=1024)
+        images_data.append({"paper": paper_name, "url": high_res_url, "alt": alt_text})
+
+    # 2. Fallback: Gather all ichef image tags directly if figures missing
     if not images_data:
         for img in article.find_all("img"):
             src = img.get("src") or img.get("data-src")
             alt_text = img.get("alt", "")
-            if src and "ichef.bbci.co.uk" in src and re.search(r"front|page|paper|cover", alt_text, re.IGNORECASE):
+            if src and "ichef.bbci.co.uk" in src:
                 paper_name = extract_paper_name(alt_text)
                 images_data.append({
                     "paper": paper_name, 
