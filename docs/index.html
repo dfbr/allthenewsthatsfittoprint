@@ -1,0 +1,18 @@
+---
+layout: default
+title: "UK Newspaper Archive"
+---
+
+<div class="grid">
+  {% for item in site.data.papers %}
+  <div class="card">
+    <a href="{{ item.img_url | relative_url }}" target="_blank">
+      <img src="{{ item.img_url | relative_url }}" alt="{{ item.paper_display }} cover" loading="lazy">
+    </a>
+    <div class="card-body">
+      <h3>{{ item.paper_display }}</h3>
+      <p>{{ item.date }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>

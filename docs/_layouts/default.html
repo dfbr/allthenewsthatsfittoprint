@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} | {{ site.title }}</title>
+    {% feed_meta %}
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f4f9; color: #333; margin: 0; padding: 20px; }
+        header { max-width: 1200px; margin: 0 auto 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 15px; }
+        header h1 { margin: 0; font-size: 1.8rem; }
+        nav a { margin-left: 15px; text-decoration: none; color: #0066cc; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: auto; display: block; }
+        .card-body { padding: 15px; }
+        .card-body h3 { margin: 0 0 5px; font-size: 1.1rem; }
+        .card-body p { margin: 0; color: #666; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ page.title }}</h1>
+        <nav>
+            <a href="{{ '/index.html' | relative_url }}">Archive</a>
+            <a href="{{ '/latest.html' | relative_url }}">Today's Front Pages</a>
+            <a href="{{ '/feed.xml' | relative_url }}">RSS Feed</a>
+        </nav>
+    </header>
+    
+    {{ content }}
+</body>
+</html>

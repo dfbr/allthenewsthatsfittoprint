@@ -1,0 +1,22 @@
+---
+layout: default
+title: "Today's Front Pages"
+---
+
+{% assign latest_date = site.data.papers.first.date %}
+
+<div class="grid">
+  {% for item in site.data.papers %}
+    {% if item.date == latest_date %}
+    <div class="card">
+      <a href="{{ item.img_url | relative_url }}" target="_blank">
+        <img src="{{ item.img_url | relative_url }}" alt="{{ item.paper_display }} cover" loading="lazy">
+      </a>
+      <div class="card-body">
+        <h3>{{ item.paper_display }}</h3>
+        <p>{{ item.date }}</p>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
