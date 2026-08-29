@@ -14,12 +14,12 @@ COVERS_DIR = os.path.join(DOCS_DIR, "covers")
 DATA_DIR = os.path.join(DOCS_DIR, "_data")
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
-# Primary and topic-specific RSS feeds from BBC
 BBC_RSS_URLS = [
     "http://feeds.bbci.co.uk/news/uk/rss.xml",
     "http://feeds.bbci.co.uk/news/rss.xml"
 ]
 
+# Primary list of UK print newspapers
 KNOWN_PAPERS = [
     "Daily Mail", "The Daily Telegraph", "Telegraph", "The Times", "The Guardian",
     "i paper", "i", "The Sun", "Daily Mirror", "Mirror", "Daily Express", "Express",
@@ -27,28 +27,66 @@ KNOWN_PAPERS = [
     "The Herald", "Morning Star"
 ]
 
+# Generic terms that indicate a newspaper front page
+PAPER_KEYWORDS = [
+    "front page", "front cover", "newspaper", "headline", "the paper", "papers"
+]
+
 def clean_filename(name: str) -> str:
     cleaned = re.sub(r'[\\/*?:"<>|]', "", name)
     return cleaned.strip().replace(" ", "_")
 
-def extract_paper_name(alt_text: str) -> str:
+def extract_paper_name(alt_text: str) -> Optional[str]:
+    """
+    Extracts a valid newspaper name ONLY if the text explicitly names a known paper.
+    Returns None if no known paper is identified.
+    """
     for paper in KNOWN_PAPERS:
         pattern = rf"\b{re.escape(paper)}\b"
         if re.search(pattern, alt_text, re.IGNORECASE):
             return clean_filename(paper)
-    cleaned_alt = re.sub(r'(?i)front page of|front page|cover of|the cover|picture of', '', alt_text).strip()
-    cleaned_alt = clean_filename(cleaned_alt)
-    return cleaned_alt if cleaned_alt else "Unknown_Paper"
+    return None
+
+def is_valid_newspaper_image(src: str, alt_text: str) -> bool:
+    """
+    Strict filter to exclude non-newspaper graphics, ads, logos, and teasers.
+    """
+    url_lower = src.lower()
+    text_lower = alt_text.lower()
+
+    # 1. Exclude known BBC UI graphics, logos, avatars, and social sharing banners
+    excluded_path_terms = [
+        "social_sharing", "bbc_news", "logo", "avatar", "promo",
+        "icon", "advert", "banner", "line_break"
+    ]
+    if any(term in url_lower for term in excluded_path_terms):
+        return False
+
+    # 2. Exclude common non-paper caption descriptions
+    excluded_text_terms = [
+        "bbc news", "getty images", "reuters", "afp", "stock photo",
+        "author", "reporter", "file photo", "file picture"
+    ]
+    if any(term in text_lower for term in excluded_text_terms):
+        # Allow if it explicitly says 'front page'
+        if not any(kw in text_lower for kw in PAPER_KEYWORDS):
+            return False
+
+    # 3. MUST match a known paper or explicitly mention "front page/newspaper"
+    paper_matched = extract_paper_name(alt_text) is not None
+    has_paper_keyword = any(kw in text_lower for kw in PAPER_KEYWORDS)
+
+    return paper_matched or has_paper_keyword
 
 def upgrade_bbc_image_url(url: str, target_width: int = 1024) -> str:
     """Upgrades BBC dynamic iChef resolution parameter to high quality."""
-    return re.sub(r'/news/\d+/', f'/news/{target_width}/', url)
+    # Standard iChef pattern: .../news/240/... -> .../news/1024/...
+    url = re.sub(r'/news/\d+/', f'/news/{target_width}/', url)
+    # ACE image pattern: .../standard/240/... -> .../standard/1024/...
+    url = re.sub(r'/standard/\d+/', f'/standard/{target_width}/', url)
+    return url
 
 def get_paper_roundup_articles() -> List[Tuple[str, str]]:
-    """
-    Searches multiple RSS feeds for paper roundup entries.
-    Matches titles or descriptions containing paper/headline keywords.
-    """
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     
@@ -72,10 +110,7 @@ def get_paper_roundup_articles() -> List[Tuple[str, str]]:
             if link in seen_links:
                 continue
 
-            # Combined regex matching across both TITLE and DESCRIPTION
             combined_text = f"{title} {description}"
-            
-            # Pattern matches classic titles OR description references like "Several papers focus..."
             pattern = r"What the papers say|Newspaper headlines|national papers|paper review|front pages|headline|papers focus|papers report"
             
             if re.search(pattern, combined_text, re.IGNORECASE):
@@ -94,9 +129,8 @@ def get_paper_roundup_articles() -> List[Tuple[str, str]]:
 
     return found_articles
 
-
 def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
-    """Extracts front page images from modern BBC article DOM structures."""
+    """Extracts ONLY verified front page images from BBC article DOM."""
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
     
@@ -109,11 +143,13 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
 
     soup = BeautifulSoup(resp.text, "html.parser")
     images_data = []
+    seen_urls = set()
 
     article = soup.find("article") or soup
     
-    # 1. Look for figures and picture elements
+    # Locate all image containers (<figure>, <picture>, or standalone <img>)
     figures = article.find_all(["figure", "picture"])
+    
     for fig in figures:
         img = fig.find("img")
         if not img:
@@ -125,37 +161,34 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
             if srcset:
                 src = srcset.split(",")[0].split(" ")[0]
                 
-        if not src or "ichef.bbci.co.uk" not in src:
+        if not src or ("ichef.bbci.co.uk" not in src and "bbc.co.uk" not in src):
             continue
 
+        # Collect caption text from figcaption, alt tag, or parent elements
         figcaption = fig.find(["figcaption", "caption"])
         alt_text = figcaption.get_text(strip=True) if figcaption else img.get("alt", "")
-        
-        # Pull text surrounding parent blocks if alt/caption is empty
         if not alt_text and fig.parent:
             alt_text = fig.parent.get_text(strip=True)
 
-        paper_name = extract_paper_name(alt_text)
-        high_res_url = upgrade_bbc_image_url(src, target_width=1024)
-        images_data.append({"paper": paper_name, "url": high_res_url, "alt": alt_text})
+        # STAGE 1: Strict image verification check
+        if not is_valid_newspaper_image(src, alt_text):
+            print(f"    [-] Skipped non-paper graphic: '{alt_text[:40]}...'")
+            continue
 
-    # 2. Fallback: Gather all ichef image tags directly if figures missing
-    if not images_data:
-        for img in article.find_all("img"):
-            src = img.get("src") or img.get("data-src")
-            alt_text = img.get("alt", "")
-            if src and "ichef.bbci.co.uk" in src:
-                paper_name = extract_paper_name(alt_text)
-                images_data.append({
-                    "paper": paper_name, 
-                    "url": upgrade_bbc_image_url(src, target_width=1024), 
-                    "alt": alt_text
-                })
+        paper_name = extract_paper_name(alt_text) or "UK_National_Paper"
+        high_res_url = upgrade_bbc_image_url(src, target_width=1024)
+
+        if high_res_url not in seen_urls:
+            images_data.append({
+                "paper": paper_name,
+                "url": high_res_url,
+                "alt": alt_text
+            })
+            seen_urls.add(high_res_url)
 
     return images_data
 
 def download_image(url: str, output_path: str) -> bool:
-    """Downloads an image file. Returns True if a new file was saved."""
     if os.path.exists(output_path):
         return False
 
@@ -176,7 +209,6 @@ def download_image(url: str, output_path: str) -> bool:
         return False
 
 def build_jekyll_yaml():
-    """Scans all collected images and regenerates docs/_data/papers.yml."""
     os.makedirs(DATA_DIR, exist_ok=True)
     all_covers = []
 
@@ -210,7 +242,7 @@ def main():
     for article_url, issue_date in articles:
         print(f"[*] Processing article for {issue_date}...")
         images = extract_images_from_article(article_url)
-        print(f"    Found {len(images)} front page images in article.")
+        print(f"    Found {len(images)} valid front page images in article.")
         
         for img in images:
             output_file = os.path.join(COVERS_DIR, img["paper"], f"{issue_date}.jpg")
@@ -221,7 +253,6 @@ def main():
 
     print(f"\n[+] Execution complete. New downloads added: {new_images_downloaded}")
     
-    # Modern GitHub Actions output mechanism using GITHUB_OUTPUT environment file
     github_output = os.getenv("GITHUB_OUTPUT")
     has_new = "true" if new_images_downloaded > 0 else "false"
     if github_output:
