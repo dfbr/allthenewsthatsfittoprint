@@ -5,6 +5,3 @@ theme: minima
 # Output feed automatically using GitHub Pages' standard jekyll-feed plugin
 plugins:
   - jekyll-feed
-
-# Disable default Jekyll post processing for pure static rendering
-permalink: pretty
