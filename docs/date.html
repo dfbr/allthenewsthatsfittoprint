@@ -33,18 +33,41 @@ title: Archive Day
     if (filteredPapers.length === 0) {
       grid.innerHTML = `<div class="col-12 text-center text-muted"><p>No paper covers found for this date.</p></div>`;
     } else {
-      grid.innerHTML = filteredPapers.map(paper => `
+      grid.innerHTML = filteredPapers.map(paper => {
+        const versions = paper.versions && paper.versions.length > 0 ? paper.versions : [paper.img_url];
+        const hasMultipleVersions = versions.length > 1;
+        const editionsBadge = hasMultipleVersions
+          ? `<span class="position-absolute top-0 end-0 bg-dark text-white px-2 py-1 m-2 rounded small opacity-75">${versions.length} editions</span>`
+          : '';
+        const versionThumbnails = hasMultipleVersions
+          ? `
+            <div class="d-flex justify-content-center gap-2 flex-wrap px-2 pb-3">
+              ${versions.map((versionUrl, index) => `
+                <a href="${versionUrl}" target="_blank" rel="noopener" title="Edition ${index + 1} of ${versions.length}">
+                  <img src="${versionUrl}" alt="${paper.paper_display} edition ${index + 1} of ${versions.length}" style="height: 60px; width: auto; border: ${versionUrl === paper.img_url ? '2px solid #0d6efd' : '1px solid #ccc'}; border-radius: 4px;">
+                </a>
+              `).join('')}
+            </div>
+          `
+          : '';
+        return `
         <div class="col">
           <div class="card h-100 shadow-sm border-0">
-            <a href="${paper.img_url}" target="_blank" rel="noopener">
-              <img src="${paper.img_url}" class="card-img-top" alt="${paper.paper_display} cover">
-            </a>
-            <div class="card-body text-center p-3">
-              <h5 class="card-title h6 mb-0">${paper.paper_display}</h5>
+            <div class="position-relative">
+              <a href="${paper.img_url}" target="_blank" rel="noopener">
+                <img src="${paper.img_url}" class="card-img-top" alt="${paper.paper_display} cover">
+              </a>
+              ${editionsBadge}
             </div>
+            <div class="card-body text-center p-3 pb-2">
+              <h5 class="card-title h6 mb-0">${paper.paper_display}</h5>
+              ${hasMultipleVersions ? `<p class="small text-muted mb-0 mt-1">Front page updated during the day &mdash; latest shown above</p>` : ''}
+            </div>
+            ${versionThumbnails}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
   } else {
     heading.textContent = "No Date Selected";
