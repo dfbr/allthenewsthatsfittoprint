@@ -1,4 +1,3 @@
----
 layout: default
 title: Latest Front Pages
 ---
@@ -6,10 +5,23 @@ title: Latest Front Pages
 <div class="container my-4">
   {% assign latest_date = site.data.papers | map: "date" | first %}
   {% assign latest_papers = site.data.papers | where: "date", latest_date %}
+  {% assign day = latest_date | date: "%d" | plus: 0 %}
+  {% assign last_digit = day | modulo: 10 %}
+  {% if day == 11 or day == 12 or day == 13 %}
+    {% assign day_suffix = "th" %}
+  {% elsif last_digit == 1 %}
+    {% assign day_suffix = "st" %}
+  {% elsif last_digit == 2 %}
+    {% assign day_suffix = "nd" %}
+  {% elsif last_digit == 3 %}
+    {% assign day_suffix = "rd" %}
+  {% else %}
+    {% assign day_suffix = "th" %}
+  {% endif %}
 
   <div class="text-center mb-5">
     <span class="badge bg-danger text-uppercase px-3 py-2 fs-6 mb-2">Today's Edition</span>
-    <h1 class="display-4 fw-bold">Front Pages for {{ latest_date }}</h1>
+    <h1 class="display-4 fw-bold">Front Pages for {{ day }}<sup>{{ day_suffix }}</sup> {{ latest_date | date: "%B %Y" }}</h1>
     <p class="lead text-muted">Showing all UK national newspaper front covers collected today.</p>
     <a href="/history.html" class="btn btn-outline-primary btn-sm mt-2">Explore Historical Archive &rarr;</a>
   </div>
