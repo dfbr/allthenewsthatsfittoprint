@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import sys
+import tempfile
 import datetime
 from typing import List, Dict, Optional, Tuple
 import requests
@@ -219,31 +220,36 @@ def download_image(url: str, output_path: str) -> bool:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
 
+    directory = os.path.dirname(output_path)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=directory or ".", suffix=".tmp")
     try:
-        with session.get(url, timeout=15) as r:
-            r.raise_for_status()
-            content = r.content
-    except Exception as e:
-        print(f"    [-] Failed to download image {url}: {e}", file=sys.stderr)
-        return False
-
-    if os.path.exists(output_path):
-        existing_hash = _file_hash(output_path)
-        new_hash = hashlib.sha256(content).hexdigest()
-        if existing_hash == new_hash:
+        try:
+            with session.get(url, stream=True, timeout=15) as r:
+                r.raise_for_status()
+                with os.fdopen(tmp_fd, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+        except Exception as e:
+            print(f"    [-] Failed to download image {url}: {e}", file=sys.stderr)
             return False
 
-        # The front page has changed since we last checked: archive the
-        # previous version before writing the new one to the canonical path,
-        # so the day's page can show every version published so far.
-        archive_path = _next_version_path(output_path)
-        os.rename(output_path, archive_path)
-        print(f"    [~] Front page changed, archived previous version: {archive_path}")
+        if os.path.exists(output_path):
+            if _file_hash(output_path) == _file_hash(tmp_path):
+                return False
 
-    with open(output_path, 'wb') as f:
-        f.write(content)
-    print(f"    [+] Saved new cover: {output_path}")
-    return True
+            # The front page has changed since we last checked: archive the
+            # previous version before writing the new one to the canonical
+            # path, so the day's page can show every version published so far.
+            archive_path = _next_version_path(output_path)
+            os.rename(output_path, archive_path)
+            print(f"    [~] Front page changed, archived previous version: {archive_path}")
+
+        os.replace(tmp_path, output_path)
+        print(f"    [+] Saved new cover: {output_path}")
+        return True
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 def build_jekyll_yaml():
     os.makedirs(DATA_DIR, exist_ok=True)
