@@ -1,0 +1,28 @@
+---
+layout: null
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>{{ site.title | xml_escape }}</title>
+    <description>{{ site.description | xml_escape }}</description>
+    <link>{{ site.url }}/</link>
+    <atom:link href="{{ site.url }}/feed.xml" rel="self" type="application/rss+xml" />
+    <language>en-gb</language>
+    <lastBuildDate>{{ site.data.papers.first.date | date: "%a, %d %b %Y 00:00:00 +0000" }}</lastBuildDate>
+    {% assign dates = site.data.papers | map: "date" | uniq %}
+    {% for day in dates %}
+    {% assign day_papers = site.data.papers | where: "date", day %}
+    {% assign sample_paper = day_papers | first %}
+    <item>
+      <title>UK newspaper front pages: {{ day | date: "%d %B %Y" }}</title>
+      <link>{{ site.url }}/date.html?date={{ day }}</link>
+      <guid isPermaLink="false">front-pages-{{ day }}</guid>
+      <pubDate>{{ day | date: "%a, %d %b %Y 00:00:00 +0000" }}</pubDate>
+      <description><![CDATA[<p>{{ day_papers.size }} UK newspaper front pages for {{ day | date: "%d %B %Y" }}.</p><p><a href="{{ site.url }}/date.html?date={{ day }}">View all front pages</a></p><p><img src="{{ site.url }}{{ sample_paper.img_url }}" alt="Sample front page for {{ day }}"></p>]]></description>
+      <enclosure url="{{ site.url }}{{ sample_paper.img_url }}" type="image/jpeg" />
+      <media:content url="{{ site.url }}{{ sample_paper.img_url }}" type="image/jpeg" />
+    </item>
+    {% endfor %}
+  </channel>
+</rss>

@@ -1,7 +1,4 @@
 title: "UK Newspaper Front Pages"
 description: "Daily front page covers of major British newspapers."
+url: "https://allthenews.dfbr.co.uk"
 theme: minima
-
-# Output feed automatically using GitHub Pages' standard jekyll-feed plugin
-plugins:
-  - jekyll-feed
