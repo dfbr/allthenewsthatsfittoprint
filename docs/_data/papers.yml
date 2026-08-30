@@ -1,3 +1,48 @@
+- date: '2026-08-30'
+  img_url: /covers/UK_National_Paper/2026-08-30.jpg
+  paper: UK_National_Paper
+  paper_display: UK National Paper
+  versions:
+  - /covers/UK_National_Paper/2026-08-30_v1.jpg
+  - /covers/UK_National_Paper/2026-08-30_v2.jpg
+  - /covers/UK_National_Paper/2026-08-30_v3.jpg
+  - /covers/UK_National_Paper/2026-08-30.jpg
+- date: '2026-08-30'
+  img_url: /covers/The_Sun/2026-08-30.jpg
+  paper: The_Sun
+  paper_display: The Sun
+  versions:
+  - /covers/The_Sun/2026-08-30.jpg
+- date: '2026-08-30'
+  img_url: /covers/The_Independent/2026-08-30.jpg
+  paper: The_Independent
+  paper_display: The Independent
+  versions:
+  - /covers/The_Independent/2026-08-30.jpg
+- date: '2026-08-30'
+  img_url: /covers/Telegraph/2026-08-30.jpg
+  paper: Telegraph
+  paper_display: Telegraph
+  versions:
+  - /covers/Telegraph/2026-08-30.jpg
+- date: '2026-08-30'
+  img_url: /covers/Mirror/2026-08-30.jpg
+  paper: Mirror
+  paper_display: Mirror
+  versions:
+  - /covers/Mirror/2026-08-30.jpg
+- date: '2026-08-30'
+  img_url: /covers/Express/2026-08-30.jpg
+  paper: Express
+  paper_display: Express
+  versions:
+  - /covers/Express/2026-08-30.jpg
+- date: '2026-08-30'
+  img_url: /covers/Daily_Star/2026-08-30.jpg
+  paper: Daily_Star
+  paper_display: Daily Star
+  versions:
+  - /covers/Daily_Star/2026-08-30.jpg
 - date: '2026-08-29'
   img_url: /covers/i/2026-08-29.jpg
   paper: i
