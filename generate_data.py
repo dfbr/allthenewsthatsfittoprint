@@ -32,7 +32,7 @@ KNOWN_PAPERS = [
 
 # Generic terms that indicate a newspaper front page
 PAPER_KEYWORDS = [
-    "front page", "front cover", "newspaper", "headline", "the paper", "papers"
+    "front page", "front cover", "newspaper", "headline", "the paper", "papers", "Papers"
 ]
 
 def clean_filename(name: str) -> str:
@@ -114,7 +114,7 @@ def get_paper_roundup_articles() -> List[Tuple[str, str]]:
                 continue
 
             combined_text = f"{title} {description}"
-            pattern = r"What the papers say|Newspaper headlines|national papers|paper review|front pages|headline|papers focus|papers report"
+            pattern = r"What the papers say|Newspaper headlines|national papers|paper review|front pages|headline|papers focus|papers report|Papers"
             
             if re.search(pattern, combined_text, re.IGNORECASE):
                 published_parsed = entry.get("published_parsed")
