@@ -1,3 +1,75 @@
+- date: '2026-09-04'
+  img_url: /covers/i_paper/2026-09-04.jpg
+  paper: i_paper
+  paper_display: i paper
+  versions:
+  - /covers/i_paper/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/i/2026-09-04.jpg
+  paper: i
+  paper_display: i
+  versions:
+  - /covers/i/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/The_Times/2026-09-04.jpg
+  paper: The_Times
+  paper_display: The Times
+  versions:
+  - /covers/The_Times/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/The_Sun/2026-09-04.jpg
+  paper: The_Sun
+  paper_display: The Sun
+  versions:
+  - /covers/The_Sun/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/The_Guardian/2026-09-04.jpg
+  paper: The_Guardian
+  paper_display: The Guardian
+  versions:
+  - /covers/The_Guardian/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/The_Daily_Telegraph/2026-09-04.jpg
+  paper: The_Daily_Telegraph
+  paper_display: The Daily Telegraph
+  versions:
+  - /covers/The_Daily_Telegraph/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/Metro/2026-09-04.jpg
+  paper: Metro
+  paper_display: Metro
+  versions:
+  - /covers/Metro/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/Financial_Times/2026-09-04.jpg
+  paper: Financial_Times
+  paper_display: Financial Times
+  versions:
+  - /covers/Financial_Times/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/Daily_Star/2026-09-04.jpg
+  paper: Daily_Star
+  paper_display: Daily Star
+  versions:
+  - /covers/Daily_Star/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/Daily_Mirror/2026-09-04.jpg
+  paper: Daily_Mirror
+  paper_display: Daily Mirror
+  versions:
+  - /covers/Daily_Mirror/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/Daily_Mail/2026-09-04.jpg
+  paper: Daily_Mail
+  paper_display: Daily Mail
+  versions:
+  - /covers/Daily_Mail/2026-09-04.jpg
+- date: '2026-09-04'
+  img_url: /covers/Daily_Express/2026-09-04.jpg
+  paper: Daily_Express
+  paper_display: Daily Express
+  versions:
+  - /covers/Daily_Express/2026-09-04.jpg
 - date: '2026-09-03'
   img_url: /covers/i_paper/2026-09-03.jpg
   paper: i_paper
