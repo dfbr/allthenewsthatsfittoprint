@@ -1,3 +1,45 @@
+- date: '2026-09-06'
+  img_url: /covers/The_Times/2026-09-06.jpg
+  paper: The_Times
+  paper_display: The Times
+  versions:
+  - /covers/The_Times/2026-09-06.jpg
+- date: '2026-09-06'
+  img_url: /covers/The_Sun/2026-09-06.jpg
+  paper: The_Sun
+  paper_display: The Sun
+  versions:
+  - /covers/The_Sun/2026-09-06.jpg
+- date: '2026-09-06'
+  img_url: /covers/Telegraph/2026-09-06.jpg
+  paper: Telegraph
+  paper_display: Telegraph
+  versions:
+  - /covers/Telegraph/2026-09-06.jpg
+- date: '2026-09-06'
+  img_url: /covers/Mirror/2026-09-06.jpg
+  paper: Mirror
+  paper_display: Mirror
+  versions:
+  - /covers/Mirror/2026-09-06.jpg
+- date: '2026-09-06'
+  img_url: /covers/Express/2026-09-06.jpg
+  paper: Express
+  paper_display: Express
+  versions:
+  - /covers/Express/2026-09-06.jpg
+- date: '2026-09-06'
+  img_url: /covers/Daily_Star/2026-09-06.jpg
+  paper: Daily_Star
+  paper_display: Daily Star
+  versions:
+  - /covers/Daily_Star/2026-09-06.jpg
+- date: '2026-09-06'
+  img_url: /covers/Daily_Mail/2026-09-06.jpg
+  paper: Daily_Mail
+  paper_display: Daily Mail
+  versions:
+  - /covers/Daily_Mail/2026-09-06.jpg
 - date: '2026-09-05'
   img_url: /covers/i_paper/2026-09-05.jpg
   paper: i_paper
