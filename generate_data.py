@@ -35,6 +35,16 @@ PAPER_KEYWORDS = [
     "front page", "front cover", "newspaper", "headline", "the paper", "papers", "Papers"
 ]
 
+WEEKDAYS = {
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
+}
+
 def clean_filename(name: str) -> str:
     cleaned = re.sub(r'[\\/*?:"<>|]', "", name)
     return cleaned.strip().replace(" ", "_")
@@ -89,6 +99,40 @@ def upgrade_bbc_image_url(url: str, target_width: int = 1024) -> str:
     url = re.sub(r'/standard/\d+/', f'/standard/{target_width}/', url)
     return url
 
+def extract_issue_date(article_text: str, story_date: str) -> str:
+    """Returns the issue date named in a BBC newspaper roundup, if available."""
+    reference_date = datetime.date.fromisoformat(story_date)
+    issue_date_match = re.search(
+        r"\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+"
+        r"(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|"
+        r"September|October|November|December)(?:\s+\d{4})?)\b",
+        article_text,
+        re.IGNORECASE,
+    )
+    if issue_date_match:
+        date_text = issue_date_match.group(1)
+        for date_format in ("%d %B %Y", "%d %B"):
+            try:
+                parsed_date = datetime.datetime.strptime(date_text, date_format).date()
+                if date_format == "%d %B":
+                    parsed_date = parsed_date.replace(year=reference_date.year)
+                return parsed_date.isoformat()
+            except ValueError:
+                continue
+
+    weekday_match = re.search(
+        r"\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)'?s?\s+"
+        r"(?:newspapers|papers|front pages|front-page)",
+        article_text,
+        re.IGNORECASE,
+    )
+    if weekday_match:
+        issue_weekday = WEEKDAYS[weekday_match.group(1).lower()]
+        days_until_issue = (issue_weekday - reference_date.weekday()) % 7
+        return (reference_date + datetime.timedelta(days=days_until_issue)).isoformat()
+
+    return story_date
+
 def get_paper_roundup_articles() -> List[Tuple[str, str]]:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
@@ -132,7 +176,7 @@ def get_paper_roundup_articles() -> List[Tuple[str, str]]:
 
     return found_articles
 
-def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
+def extract_images_from_article(article_url: str, story_date: str) -> Tuple[str, List[Dict[str, str]]]:
     """Extracts ONLY verified front page images from BBC article DOM."""
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
@@ -142,9 +186,10 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
         resp.raise_for_status()
     except Exception as e:
         print(f"[-] Article HTTP Error: {e}", file=sys.stderr)
-        return []
+        return story_date, []
 
     soup = BeautifulSoup(resp.text, "html.parser")
+    issue_date = extract_issue_date(soup.get_text(" ", strip=True), story_date)
     images_data = []
     seen_urls = set()
 
@@ -189,7 +234,7 @@ def extract_images_from_article(article_url: str) -> List[Dict[str, str]]:
             })
             seen_urls.add(high_res_url)
 
-    return images_data
+    return issue_date, images_data
 
 # Matches archived version filenames, e.g. "2024-01-01_v2.jpg"
 VERSION_SUFFIX_RE = re.compile(r'^(?P<base>.+)_v(?P<version>\d+)(?P<ext>\.[^.]+)$')
@@ -373,9 +418,9 @@ def main():
     
     new_images_downloaded = 0
 
-    for article_url, issue_date in articles:
+    for article_url, story_date in articles:
+        issue_date, images = extract_images_from_article(article_url, story_date)
         print(f"[*] Processing article for {issue_date}...")
-        images = extract_images_from_article(article_url)
         print(f"    Found {len(images)} valid front page images in article.")
         
         for img in images:
