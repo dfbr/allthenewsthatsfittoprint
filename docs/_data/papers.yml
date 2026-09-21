@@ -11,6 +11,12 @@
   versions:
   - /covers/The_Times/2026-09-21.jpg
 - date: '2026-09-21'
+  img_url: /covers/The_Sun/2026-09-21.jpg
+  paper: The_Sun
+  paper_display: The Sun
+  versions:
+  - /covers/The_Sun/2026-09-21.jpg
+- date: '2026-09-21'
   img_url: /covers/The_Independent/2026-09-21.jpg
   paper: The_Independent
   paper_display: The Independent
