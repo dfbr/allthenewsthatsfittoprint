@@ -17,6 +17,12 @@
   versions:
   - /covers/The_Sun/2026-10-07.jpg
 - date: '2026-10-07'
+  img_url: /covers/The_Independent/2026-10-07.jpg
+  paper: The_Independent
+  paper_display: The Independent
+  versions:
+  - /covers/The_Independent/2026-10-07.jpg
+- date: '2026-10-07'
   img_url: /covers/The_Guardian/2026-10-07.jpg
   paper: The_Guardian
   paper_display: The Guardian
