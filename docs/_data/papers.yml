@@ -5,6 +5,12 @@
   versions:
   - /covers/i_paper/2026-10-09.jpg
 - date: '2026-10-09'
+  img_url: /covers/UK_National_Paper/2026-10-09.jpg
+  paper: UK_National_Paper
+  paper_display: UK National Paper
+  versions:
+  - /covers/UK_National_Paper/2026-10-09.jpg
+- date: '2026-10-09'
   img_url: /covers/The_Times/2026-10-09.jpg
   paper: The_Times
   paper_display: The Times
