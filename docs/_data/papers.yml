@@ -9,7 +9,16 @@
   paper: i
   paper_display: i
   versions:
+  - /covers/i/2026-11-14_v1.jpg
+  - /covers/i/2026-11-14_v2.jpg
+  - /covers/i/2026-11-14_v3.jpg
   - /covers/i/2026-11-14.jpg
+- date: '2026-11-14'
+  img_url: /covers/UK_National_Paper/2026-11-14.jpg
+  paper: UK_National_Paper
+  paper_display: UK National Paper
+  versions:
+  - /covers/UK_National_Paper/2026-11-14.jpg
 - date: '2026-11-14'
   img_url: /covers/The_Times/2026-11-14.jpg
   paper: The_Times
@@ -32,11 +41,29 @@
   versions:
   - /covers/The_Daily_Telegraph/2026-11-14.jpg
 - date: '2026-11-14'
+  img_url: /covers/Telegraph/2026-11-14.jpg
+  paper: Telegraph
+  paper_display: Telegraph
+  versions:
+  - /covers/Telegraph/2026-11-14.jpg
+- date: '2026-11-14'
+  img_url: /covers/Mirror/2026-11-14.jpg
+  paper: Mirror
+  paper_display: Mirror
+  versions:
+  - /covers/Mirror/2026-11-14.jpg
+- date: '2026-11-14'
   img_url: /covers/Financial_Times/2026-11-14.jpg
   paper: Financial_Times
   paper_display: Financial Times
   versions:
   - /covers/Financial_Times/2026-11-14.jpg
+- date: '2026-11-14'
+  img_url: /covers/Express/2026-11-14.jpg
+  paper: Express
+  paper_display: Express
+  versions:
+  - /covers/Express/2026-11-14.jpg
 - date: '2026-11-14'
   img_url: /covers/Daily_Star/2026-11-14.jpg
   paper: Daily_Star
