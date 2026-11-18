@@ -5321,6 +5321,18 @@
   paper_display: Daily Express
   versions:
   - /covers/Daily_Express/2026-08-29.jpg
+- date: '2026-06-23'
+  img_url: /covers/i/2026-06-23.jpg
+  paper: i
+  paper_display: i
+  versions:
+  - /covers/i/2026-06-23.jpg
+- date: '2026-06-23'
+  img_url: /covers/UK_National_Paper/2026-06-23.jpg
+  paper: UK_National_Paper
+  paper_display: UK National Paper
+  versions:
+  - /covers/UK_National_Paper/2026-06-23.jpg
 - date: '2001-09-11'
   img_url: /covers/i_paper/2001-09-11.jpg
   paper: i_paper
